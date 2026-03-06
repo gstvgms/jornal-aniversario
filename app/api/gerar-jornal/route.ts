@@ -4,6 +4,40 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { ConteudoJornal } from '@/types';
 
+async function fetchWikipediaEvents(mm: string, dd: string, yyyy: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`,
+      {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+    if (!res.ok) return '';
+    const data = await res.json();
+    const allEvents: { year: number; text: string }[] = data.events || [];
+
+    // Filter events from the exact year ±2 years
+    const nearby = allEvents
+      .filter((e) => Math.abs(e.year - yyyy) <= 2)
+      .slice(0, 8)
+      .map((e) => `${e.year}: ${e.text}`)
+      .join('\n');
+
+    if (nearby.length > 0) return nearby;
+
+    // Fallback: 5 most recent events before the year
+    return allEvents
+      .filter((e) => e.year <= yyyy)
+      .sort((a, b) => b.year - a.year)
+      .slice(0, 5)
+      .map((e) => `${e.year}: ${e.text}`)
+      .join('\n');
+  } catch {
+    return '';
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -26,9 +60,19 @@ export async function POST(req: NextRequest) {
 
     const langInstruction = idioma === 'en' ? 'English' : 'Portuguese (Brazil)';
 
-    const systemPrompt = `Você é um jornalista histórico especializado. Baseado na data ${dd}/${mm}/${yyyy}, gere o conteúdo de um jornal impresso da época com:
+    // Fetch real historical events from Wikipedia
+    const eventosReais = await fetchWikipediaEvents(mm, dd, yyyy);
+
+    const eventosContext = eventosReais
+      ? `Eventos REAIS que aconteceram nesta data ou período (use como base factual):\n${eventosReais}\n\nCom base NESSES EVENTOS REAIS (não invente eventos), gere`
+      : 'Gere';
+
+    const systemPrompt = `Você é um jornalista histórico especializado.
+Data do jornal: ${dd}/${mm}/${yyyy}
+
+${eventosContext} o conteúdo de um jornal impresso da época com:
 - 1 manchete principal sobre o nascimento do aniversariante "${nomeAniversariante}"
-- 5 notícias reais ou historicamente plausíveis da época, cada uma com:
+- 5 notícias baseadas nos eventos reais acima (quando disponíveis), formatadas jornalisticamente, cada uma com:
   - titulo (máx 8 palavras)
   - subtitulo (máx 15 palavras)
   - corpo (3-4 parágrafos, estilo jornalístico da época)
@@ -36,7 +80,8 @@ export async function POST(req: NextRequest) {
   - prompt_imagem (descrição em inglês para gerar foto jornalística da época)
 - 1 horoscopo do signo correspondente à data (signo + texto)
 - 1 anuncio publicitário fictício de produto da época (nome_produto, slogan, descricao)
-- 1 coluna "Músicas mais pedidas" com array de 5 strings "Artista — Música"
+- 1 coluna "Músicas mais pedidas" com array de 5 strings "Artista — Música" (reais da época)
+IMPORTANTE: Não invente eventos esportivos, políticos ou culturais que não aconteceram. Use apenas os eventos fornecidos acima quando disponíveis.
 Responda SOMENTE em JSON válido, sem markdown, sem blocos de código, seguindo exatamente esta estrutura:
 {
   "manchete": "string",
@@ -99,3 +144,4 @@ Idioma de resposta: ${langInstruction}`;
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

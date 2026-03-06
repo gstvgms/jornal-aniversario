@@ -34,8 +34,10 @@ export interface Jornal {
   idioma: string;
   conteudo_json: ConteudoJornal;
   imagens_urls: string[] | null;
-  status: 'preview' | 'processando' | 'pago';
+  status: 'preview' | 'processando' | 'pago_digital' | 'pago_impressao';
   stripe_session_id: string | null;
   pdf_url: string | null;
+  imagem_url: string | null;
+  tipo_pago: 'digital' | 'impressao' | null;
   created_at: string;
 }

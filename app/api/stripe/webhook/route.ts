@@ -23,40 +23,64 @@ export async function POST(req: NextRequest) {
     const session = event.data.object;
     const jornalId = session.metadata?.jornalId;
     const userId = session.metadata?.userId;
+    const tipo = session.metadata?.tipo === 'impressao' ? 'impressao' : 'digital';
 
     if (!jornalId || !userId) {
       return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
     }
 
     const supabaseAdmin = getSupabaseAdmin();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Update status to processing
     await supabaseAdmin
       .from('jornais')
-      .update({ status: 'processando', stripe_session_id: session.id })
+      .update({ status: 'processando', stripe_session_id: session.id, tipo_pago: tipo })
       .eq('id', jornalId);
 
-    // Generate PDF
-    try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const pdfRes = await fetch(`${appUrl}/api/gerar-pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jornalId, userId }),
-      });
+    if (tipo === 'impressao') {
+      // Generate PDF Tablóide
+      try {
+        const pdfRes = await fetch(`${appUrl}/api/gerar-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jornalId, userId }),
+        });
 
-      if (!pdfRes.ok) {
-        throw new Error('Failed to generate PDF');
+        if (!pdfRes.ok) {
+          throw new Error('Failed to generate PDF');
+        }
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        // Don't fail the webhook — mark as pago_impressao so user can retry
+        await supabaseAdmin
+          .from('jornais')
+          .update({ status: 'pago_impressao' })
+          .eq('id', jornalId);
       }
-    } catch (err) {
-      console.error('PDF generation error:', err);
-      // Don't fail the webhook - mark as pago anyway so user can retry
-      await supabaseAdmin
-        .from('jornais')
-        .update({ status: 'pago' })
-        .eq('id', jornalId);
+    } else {
+      // Generate PNG image
+      try {
+        const imgRes = await fetch(`${appUrl}/api/gerar-imagem`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jornalId, userId }),
+        });
+
+        if (!imgRes.ok) {
+          throw new Error('Failed to generate image');
+        }
+      } catch (err) {
+        console.error('Image generation error:', err);
+        // Don't fail the webhook — mark as pago_digital so user can retry
+        await supabaseAdmin
+          .from('jornais')
+          .update({ status: 'pago_digital' })
+          .eq('id', jornalId);
+      }
     }
   }
 
   return NextResponse.json({ received: true });
 }
+
