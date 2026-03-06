@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --font-playfair: 'Playfair Display', Georgia, serif;
+  --font-libre: 'Libre Baskerville', Georgia, serif;
+}
+
+body {
+  font-family: var(--font-libre);
+}
+
+.font-headline {
+  font-family: var(--font-playfair);
+}
+
+.paper-bg {
+  background-color: #f5f0e8;
+}
+
+.ink-color {
+  color: #1a1a1a;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
