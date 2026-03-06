@@ -16,9 +16,9 @@ export default function PreviewPage() {
   const [jornal, setJornal] = useState<Jornal | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const supabase = createSupabaseClient();
 
   useEffect(() => {
+    const supabase = createSupabaseClient();
     const fetchJornal = async () => {
       const { data, error } = await supabase
         .from('jornais')
@@ -36,8 +36,7 @@ export default function PreviewPage() {
     };
 
     fetchJornal();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, router]);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {

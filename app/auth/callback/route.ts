@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
               );
-            } catch {}
+            } catch {
+              // Server Components cannot set cookies; safe to ignore in those contexts
+            }
           },
         },
       }

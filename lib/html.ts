@@ -2,6 +2,14 @@ import type { ConteudoJornal } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 
+function deterministicEditionNumber(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return (hash % 9000) + 1000;
+}
+
 function toRoman(num: number): string {
   const values = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
   const symbols = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
@@ -47,7 +55,7 @@ export function generateJornalHtml(jornal: {
     ? format(dataObj, 'EEEE, MMMM do, yyyy', { locale })
     : format(dataObj, "EEEE, dd 'de' MMMM 'de' yyyy", { locale });
   const anoRomano = toRoman(dataObj.getFullYear());
-  const numeroEdicao = Math.floor(Math.random() * 9000) + 1000;
+  const numeroEdicao = deterministicEditionNumber(data_nascimento + nome_jornal);
 
   const [n1, n2, n3, n4, n5] = noticias;
   const imgs = imagens_urls || [];

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import AuthModal from './AuthModal';
@@ -25,6 +25,7 @@ export default function FormGerarJornal() {
   const [idioma, setIdioma] = useState('pt');
   const [loading, setLoading] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const supabase = createSupabaseClient();
 
   const handleNomeJornalChange = (value: string) => {
@@ -106,7 +107,7 @@ export default function FormGerarJornal() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-lg mx-auto">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 max-w-lg mx-auto">
         {/* Nome do jornal */}
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
@@ -215,9 +216,7 @@ export default function FormGerarJornal() {
           onClose={() => setShowAuth(false)}
           onSuccess={() => {
             setShowAuth(false);
-            // Re-submit after auth
-            const form = document.querySelector('form');
-            form?.requestSubmit();
+            formRef.current?.requestSubmit();
           }}
         />
       )}

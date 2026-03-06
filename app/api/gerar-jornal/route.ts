@@ -59,22 +59,20 @@ Idioma de resposta: ${langInstruction}`;
 
     const conteudoJson: ConteudoJornal = JSON.parse(content);
 
-    // Generate images with DALL-E 3
-    const imagensUrls: string[] = [];
-    for (const noticia of conteudoJson.noticias) {
-      try {
-        const imageResponse = await openai.images.generate({
+    // Generate images with DALL-E 3 in parallel for speed
+    const imagePromises = conteudoJson.noticias.map((noticia) =>
+      openai.images
+        .generate({
           model: 'dall-e-3',
           prompt: `Black and white photojournalism photograph from the ${decade}s, grainy film, high contrast, documentary style. Scene: ${noticia.prompt_imagem}. No text, no captions, no watermarks. Historical documentary aesthetic.`,
           n: 1,
           size: '1024x1024',
           quality: 'standard',
-        });
-        imagensUrls.push(imageResponse.data?.[0]?.url || '');
-      } catch {
-        imagensUrls.push('');
-      }
-    }
+        })
+        .then((res) => res.data?.[0]?.url || '')
+        .catch(() => '')
+    );
+    const imagensUrls = await Promise.all(imagePromises);
 
     // Save to Supabase
     const { data, error } = await getSupabaseAdmin()

@@ -8,19 +8,18 @@ import type { User } from '@supabase/supabase-js';
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const supabase = createSupabaseClient();
 
   useEffect(() => {
-    const supabaseInstance = supabase;
-    supabaseInstance.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: listener } = supabaseInstance.auth.onAuthStateChange((_e, session) => {
+    const supabase = createSupabaseClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
     return () => listener.subscription.unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSignOut = async () => {
+    const supabase = createSupabaseClient();
     await supabase.auth.signOut();
     setUser(null);
   };
