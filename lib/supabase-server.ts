@@ -1,5 +1,4 @@
 import { createServerClient } from '@supabase/ssr';
-import type { CookieOptionsWithName } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function createSupabaseServerClient() {
@@ -12,10 +11,10 @@ export async function createSupabaseServerClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: CookieOptionsWithName[]) {
+        setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, options ?? {})
             );
           } catch {
             // Server Components cannot set cookies; safe to ignore in those contexts
