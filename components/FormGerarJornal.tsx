@@ -53,17 +53,29 @@ export default function FormGerarJornal() {
       return;
     }
 
-    // Parse date DD/MM/YYYY
+    // Parse and validate date DD/MM/YYYY
     const parts = dataNascimento.split('/');
     if (parts.length !== 3) {
       toast.error('Data inválida. Use o formato DD/MM/AAAA.');
       return;
     }
     const [dd, mm, yyyy] = parts;
+    const dayNum = parseInt(dd, 10);
+    const monthNum = parseInt(mm, 10);
+    const yearNum = parseInt(yyyy, 10);
+    if (
+      isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum) ||
+      dayNum < 1 || dayNum > 31 ||
+      monthNum < 1 || monthNum > 12 ||
+      yearNum < 1900 || yearNum > new Date().getFullYear()
+    ) {
+      toast.error('Data inválida. Verifique o dia, mês e ano.');
+      return;
+    }
     const isoDate = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
     const dateObj = new Date(isoDate);
-    if (isNaN(dateObj.getTime())) {
-      toast.error('Data inválida.');
+    if (isNaN(dateObj.getTime()) || dateObj > new Date()) {
+      toast.error('Data inválida ou futura.');
       return;
     }
 

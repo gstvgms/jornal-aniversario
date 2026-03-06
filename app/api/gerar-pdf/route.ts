@@ -6,6 +6,13 @@ import { generateJornalHtml, wrapJornalHtml } from '@/lib/html';
 export async function POST(req: NextRequest) {
   try {
     const { jornalId, userId } = await req.json();
+
+    // Validate UUIDs to prevent path traversal
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidPattern.test(jornalId) || !uuidPattern.test(userId)) {
+      return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
+    }
+
     const supabaseAdmin = getSupabaseAdmin();
 
     const { data: jornal, error } = await supabaseAdmin

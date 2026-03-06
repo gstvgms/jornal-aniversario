@@ -2,6 +2,10 @@ import type { ConteudoJornal } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 
+/**
+ * Generates a deterministic edition number (1000–9999) from a seed string.
+ * Uses a simple hash so the same newspaper always shows the same edition number.
+ */
 function deterministicEditionNumber(seed: string): number {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -23,6 +27,7 @@ function toRoman(num: number): string {
   return result;
 }
 
+/** Escapes HTML special characters to prevent XSS in generated HTML content. */
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')

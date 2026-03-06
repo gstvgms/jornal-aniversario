@@ -99,7 +99,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               className="w-full border border-ink/30 rounded px-3 py-2 bg-white/50 focus:outline-none focus:border-ink text-ink"
               placeholder="••••••••"
             />
