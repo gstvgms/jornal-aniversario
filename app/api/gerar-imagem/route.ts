@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { generatePDF } from '@/lib/pdf';
+import { generateScreenshot } from '@/lib/pdf';
 import { generateJornalHtml, wrapJornalHtml } from '@/lib/html';
 
 export async function POST(req: NextRequest) {
@@ -27,35 +27,34 @@ export async function POST(req: NextRequest) {
 
     const bodyHtml = generateJornalHtml(jornal);
     const html = wrapJornalHtml(bodyHtml);
-    const pdfBuffer = await generatePDF(html);
+    const imageBuffer = await generateScreenshot(html);
 
     // Upload to Supabase Storage
-    const fileName = `${userId}/${jornalId}.pdf`;
+    const fileName = `${userId}/${jornalId}.png`;
     const { error: uploadError } = await supabaseAdmin.storage
-      .from('jornais-pdf')
-      .upload(fileName, pdfBuffer, {
-        contentType: 'application/pdf',
+      .from('jornais-imagens')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/png',
         upsert: true,
       });
 
     if (uploadError) throw uploadError;
 
     const { data: urlData } = supabaseAdmin.storage
-      .from('jornais-pdf')
+      .from('jornais-imagens')
       .getPublicUrl(fileName);
 
-    const pdfUrl = urlData.publicUrl;
+    const imagemUrl = urlData.publicUrl;
 
     await supabaseAdmin
       .from('jornais')
-      .update({ status: 'pago_impressao', pdf_url: pdfUrl })
+      .update({ status: 'pago_digital', imagem_url: imagemUrl })
       .eq('id', jornalId);
 
-    return NextResponse.json({ pdfUrl });
+    return NextResponse.json({ imagemUrl });
   } catch (err: unknown) {
-    console.error('Erro ao gerar PDF:', err);
+    console.error('Erro ao gerar imagem:', err);
     const message = err instanceof Error ? err.message : 'Erro interno';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

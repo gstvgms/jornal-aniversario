@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
+const produtos = {
+  digital: {
+    name: 'Jornal Histórico — Digital',
+    description: 'Imagem PNG em alta resolução para baixar e compartilhar',
+    amount: 990, // R$ 9,90
+  },
+  impressao: {
+    name: 'Jornal Histórico — Impressão Profissional',
+    description: 'PDF Tablóide 300 DPI otimizado para gráfica, em papel de jornal',
+    amount: 2990, // R$ 29,90
+  },
+};
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -10,7 +23,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { jornalId } = await req.json();
+    const { jornalId, tipo } = await req.json();
+    const tipoValido = tipo === 'impressao' ? 'impressao' : 'digital';
+    const produto = produtos[tipoValido];
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     const session = await stripe.checkout.sessions.create({
@@ -20,17 +35,17 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'brl',
             product_data: {
-              name: 'Jornal Histórico — PDF',
-              description: 'Download do seu jornal histórico personalizado em alta resolução',
+              name: produto.name,
+              description: produto.description,
             },
-            unit_amount: 990, // R$ 9,90
+            unit_amount: produto.amount,
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
-      metadata: { jornalId, userId: user.id },
-      success_url: `${appUrl}/preview/${jornalId}?success=true`,
+      metadata: { jornalId, userId: user.id, tipo: tipoValido },
+      success_url: `${appUrl}/preview/${jornalId}?success=${tipoValido}`,
       cancel_url: `${appUrl}/preview/${jornalId}`,
     });
 
@@ -41,3 +56,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
