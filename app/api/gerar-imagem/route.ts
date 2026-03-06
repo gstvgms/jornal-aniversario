@@ -25,10 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Jornal não encontrado' }, { status: 404 });
     }
 
-    if (jornal.status !== 'pago_digital' && jornal.status !== 'pago_impressao') {
-      return NextResponse.json({ error: 'Pagamento não confirmado' }, { status: 403 });
-    }
-
     const bodyHtml = generateJornalHtml(jornal);
     const html = wrapJornalHtml(bodyHtml);
     const imageBuffer = await generateScreenshot(html);
@@ -52,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     await supabaseAdmin
       .from('jornais')
-      .update({ imagem_url: imagemUrl })
+      .update({ status: 'pago_digital', imagem_url: imagemUrl })
       .eq('id', jornalId);
 
     return NextResponse.json({ imagemUrl });

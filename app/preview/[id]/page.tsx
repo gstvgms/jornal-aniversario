@@ -76,9 +76,9 @@ export default function PreviewPage() {
     }
   };
 
-  const isPagoDigital = jornal?.status === 'pago_digital' || jornal?.status === 'pago_impressao';
-  const isPagoImpressao = jornal?.status === 'pago_impressao';
-  const isPago = isPagoDigital || isPagoImpressao;
+  const isPago = jornal?.status === 'pago_digital' || jornal?.status === 'pago_impressao';
+  const hasPngDownload = !!(jornal?.imagem_url);
+  const hasPdfDownload = !!(jornal?.pdf_url);
 
   if (loading) {
     return (
@@ -123,18 +123,18 @@ export default function PreviewPage() {
             >
               🔗 Compartilhar preview
             </button>
-            {jornal.status === 'pago_digital' && jornal.imagem_url && (
+            {hasPngDownload && (
               <a
-                href={jornal.imagem_url}
+                href={jornal.imagem_url!}
                 download
                 className="px-6 py-2 bg-green-700 text-white rounded font-bold text-sm hover:bg-green-800 transition-colors"
               >
                 ⬇️ Baixar Imagem PNG
               </a>
             )}
-            {jornal.status === 'pago_impressao' && jornal.pdf_url && (
+            {hasPdfDownload && (
               <a
-                href={jornal.pdf_url}
+                href={jornal.pdf_url!}
                 download
                 className="px-6 py-2 bg-blue-700 text-white rounded font-bold text-sm hover:bg-blue-800 transition-colors"
               >
